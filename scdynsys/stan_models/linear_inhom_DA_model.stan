@@ -6,8 +6,7 @@
  * If Q is the differentation matrix, we then get the ODE
  * dX/dt = (Q + rho_t)X and hence 
  * X(t) = exp(\int_0^t (Q + rho_s) ds) X_0 = exp(Qt + (rho_0 - rho_inf) (1 - e^{-ut})/u + rho_inf t) X_0
- * 
- * FIXME: the matrix exponential solution IS NOT VALID FOR NON-AUTONOMOUS SYSTEMS.
+ * NB: the matrix exponential solution IS NOT VALID FOR NON-AUTONOMOUS SYSTEMS.
  * We'll have to integrate the ODEs in these cases.
  */
 
@@ -160,10 +159,10 @@ functions {
             if ( indep == 0 ) return sigmoid_lin_model(t, t0, tau, rho, eta, Q, x0);
             return indep_sigmoid_lin_model(t, t0, tau, rho, eta, x0);
         } else if ( dyn_model == 3 ) {
-            if ( indep == 0 ) return inhom_diff_lin_model_naive_sol(t, t0, rho, w, Q, x0); // WARNING! using the naive solution
+            if ( indep == 0 ) return inhom_diff_lin_model_naive_sol(t, t0, rho, w, Q, x0); // WARNING! using the Magnus order 1 approx
             return indep_lin_model(t, t0, rho, x0); // w is meaningless in this case.        
         } else if ( dyn_model == 4 ) {
-            if ( indep == 0 ) return inhom_diff_inhom_lin_model_naive_sol(t, t0, u, rho, eta, w, Q, x0); // WARNING! using the naive solution
+            if ( indep == 0 ) return inhom_diff_inhom_lin_model_naive_sol(t, t0, u, rho, eta, w, Q, x0); // WARNING! using the Magnus order 1 approx
             return indep_inhom_lin_model(t, t0, u, rho, eta, x0); // w is meaningless in this case.
         } else {
             reject("invalid dyn_model code");
