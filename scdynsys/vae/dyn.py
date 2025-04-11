@@ -542,21 +542,14 @@ class DynamicModelDiff(PyroModule):
             # sample transition parameter u
             u = pyro.sample("u", dist.HalfNormal(one))
 
-        # penalize positive growth rates at t=inf
+        # penalize positive growth rates at t = inf
         if self.growth_rate_penalty is not None:
             Q = build_Q_mat(Qoffdiag)
-            match (self.hom, self.hom_diff):
-                case (True, True):
-                    penalty = torch.relu(max_growthrate_diff(rho, Q) * self.growth_rate_penalty)
-                case (True, False): # limit Q(t) = 0
-                    penalty = torch.relu(max_growthrate(rho) * self.growth_rate_penalty)
-                case (False, True): # limit rho(t) = eta
-                    penalty = torch.relu(max_growthrate_diff(eta, Q) * self.growth_rate_penalty)
-                case (False, False): # limit Q(t) = 0, limit rho(t) = eta
-                    penalty = torch.relu(max_growthrate(eta) * self.growth_rate_penalty)
-                case _:
-                    raise Exception(f"invalid combination of hom ({self.hom}) hom_diff ({self.hom_diff})")
-                            
+            if self.hom: # the growth rate is constant
+                penalty = torch.relu(max_growthrate_diff(rho, Q) * self.growth_rate_penalty)
+            else: # the growth rate is time-dependent, and equal to eta at t=inf
+                penalty = torch.relu(max_growthrate_diff(eta, Q) * self.growth_rate_penalty)
+
             pyro.factor("growth_rate_penalty", -penalty.square())
 
         # model dispatch
