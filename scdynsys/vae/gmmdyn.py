@@ -49,7 +49,6 @@ class VAEgmmdyn(PyroModule):
         num_batch: int, 
         dyn: PyroModule,
         time_scale: float, 
-        anchored_clusters: Optional[list[int]] = None,
         reg_scale: Optional[float] = None,
         reg_scale_batch: Optional[float] = None,
         reg_norm: Literal["l1", "l2"] = "l2",
@@ -68,8 +67,7 @@ class VAEgmmdyn(PyroModule):
         self.data_dim = data_dim
         self.num_clus = num_clus
         self.time_scale = time_scale
-        self.num_batch = num_batch        
-        self.anchored_clusters = [] if anchored_clusters is None else anchored_clusters
+        self.num_batch = num_batch 
         self.reg_scale = reg_scale
         if reg_scale is not None and reg_scale_batch is None:
             self.reg_scale_batch = reg_scale
@@ -145,9 +143,7 @@ class VAEgmmdyn(PyroModule):
         x: torch.Tensor, ## expression data (mini-batches)
         xtime: torch.Tensor, ## time of each x data point: index in utime
         s: torch.Tensor, ## experimental batch
-        cluster_hint: torch.Tensor,
         N: torch.Tensor, ## as we're doing mini-batching, we have to re-scale the log prob
-        persuasiveness: torch.Tensor,
         y: torch.Tensor, ## cell counts (short time series)
         ytime: torch.Tensor, ## time of each y data point: index in utime
         utime: torch.Tensor, ## unique observation times
@@ -203,22 +199,7 @@ class VAEgmmdyn(PyroModule):
         with pyro.plate("xdata", x.shape[-2]), pyro.poutine.scale(scale=N/x.shape[-2]):
             ## score against actual expression data
             pyro.sample("xobs", dist.Normal(x_loc, x_scale).to_event(1), obs=x)
-            
-
-        # add a term to the likelihood to anchor clusters to certain groups of cells
-        for i, c in enumerate(self.anchored_clusters):
-            comp = dist.MultivariateNormal(clus_locs, scale_tril=clus_chol_fact)
-            lps = comp.log_prob(z.unsqueeze(-2).expand((-1,self.num_clus,-1)))
-            wlps = logweights + lps
-            not_c = torch.arange(self.num_clus, device=self.device) != c
-            logodds = torch.stack([wlps[:,c], torch.logsumexp(wlps[:,not_c], dim=-1)], dim=-1)
-            with pyro.plate(f"hint_{i}", x.shape[-2]), pyro.poutine.scale(scale=N/x.shape[-2]*persuasiveness):
-                # define a mixture that can handle "unknown" cases
-                hint_mix = dist.Categorical(logits=logodds) ## weights
-                hint_probs = torch.tensor([[0, 0.5, 0.5], [0.5, 0, 0.5]], device=self.device)
-                hint_comp = dist.Categorical(probs=hint_probs)
-                pyro.sample(f"cluster_hint_{i}", dist.MixtureSameFamily(hint_mix, hint_comp), obs=cluster_hint[:,i])
-                
+                            
 
     # define the guide (i.e. variational distribution) q(z|x)
     def guide(
@@ -226,9 +207,7 @@ class VAEgmmdyn(PyroModule):
         x: torch.Tensor, ## expression data (mini-batches)
         xtime: torch.Tensor, ## time of each x data point: index in utime
         s: torch.Tensor, ## experimental batch
-        cluster_hint: torch.Tensor,
         N: torch.Tensor, ## as we're doing mini-batching, we have to re-scale the log prob
-        persuasiveness: torch.Tensor,
         y: torch.Tensor, ## cell counts (short time series)
         ytime: torch.Tensor, ## time of each y data point: index in utime
         utime: torch.Tensor ## unique observation times
@@ -516,13 +495,11 @@ class VAEgmmdyn(PyroModule):
             "reg_norm" : self.reg_norm,
             "fixed_scales" : self.fixed_scales,
             "reg_scale_batch" : self.reg_scale_batch,
-            "anchored_clusters" : self.anchored_clusters,
             "hom" : self.dyn_model.hom,
             "diff" : self.dyn_model.diff,
             "numeric_solver" : self.dyn_model.numeric_solver,
             "penalize_growth" : penalize_growth,
             "growth_rate_penalty" : growth_rate_penalty,
-            "static" : False
         }
         return settings
 

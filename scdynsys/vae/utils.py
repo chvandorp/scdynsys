@@ -48,7 +48,6 @@ def initial_rejection_sampler(
     train_loader: DataLoader,
     optimizer: PyroOptim,
     loss_method: ELBO,
-    persuasiveness: float,
     addl_data: Tuple[torch.Tensor,...] = (),
     use_cuda: bool = False,
     show_progress: Union[bool, str] = True
@@ -75,8 +74,7 @@ def initial_rejection_sampler(
             # get initial loss
             loss = train(
                 svi_try, 
-                train_loader, 
-                persuasiveness, 
+                train_loader,
                 addl_data=addl_data, 
                 use_cuda=use_cuda, 
                 eval_only=True
@@ -94,7 +92,6 @@ def initial_rejection_sampler(
 def train(
     svi: SVI,
     data_loader: DataLoader,
-    persuasiveness: float,
     addl_data: Tuple[torch.Tensor, ...] = (),
     use_cuda: bool = False,
     eval_only: bool = False
@@ -106,10 +103,8 @@ def train(
     epoch_loss = 0.0
     normalizer = len(data_loader.dataset)
     N = torch.tensor(normalizer)
-    phi = torch.tensor(persuasiveness)
     if use_cuda:
         N = N.cuda()
-        phi = phi.cuda()
         addl_data = tuple(y.cuda() for y in addl_data)
     # do a training epoch over each mini-batch x returned
     # by the data loader
@@ -119,9 +114,9 @@ def train(
             xs = tuple(x.cuda() for x in xs)
         # do ELBO gradient and accumulate loss
         if not eval_only:
-            epoch_loss += svi.step(*xs, N, phi, *addl_data)
+            epoch_loss += svi.step(*xs, N, *addl_data)
         else:
-            epoch_loss += svi.evaluate_loss(*xs, N, phi, *addl_data)
+            epoch_loss += svi.evaluate_loss(*xs, N, *addl_data)
     # return epoch loss
     total_epoch_loss = epoch_loss / len(data_loader)
     return total_epoch_loss
@@ -133,8 +128,6 @@ def train_test_loop(
     test_loader: DataLoader,
     num_epochs: int,
     test_interval: int,
-    persuasiveness_shrink_rate: float,
-    initial_persuasiveness: float = 1.0,
     addl_data: Tuple[torch.Tensor, ...] = (),
     use_cuda: bool = False,
     show_progress: Union[bool, str] = True
@@ -154,12 +147,6 @@ def train_test_loop(
         The number of epochs used for training.
     test_interval : int
         Evaluate the loss with the test data every `test_interval` epochs.
-    persuasiveness_shrink_rate : float
-        Parameter determining how fast the cluster hints are weighted down.
-        The likelihood of cluster hints is weighted with a factor
-        exp(-persuasiveness_shrink_rate * epoch) using pyro.poutine.scale
-    initial_persuasiveness : float
-        Initial persuasiveness vale. The default is 1.0.
     addl_data : Tuple[torch.Tensor, ...], optional
         additional data required by the model that is not mini-batched. 
         The default is ().
@@ -192,11 +179,9 @@ def train_test_loop(
     test_elbo = []
         
     for epoch in (pbar := trange(num_epochs)):
-        persuasiveness = np.exp(-epoch*persuasiveness_shrink_rate)
         total_epoch_loss_train = train(
             svi, 
             train_loader,
-            persuasiveness,
             addl_data=addl_data,
             use_cuda=use_cuda
         )
@@ -209,7 +194,6 @@ def train_test_loop(
             total_epoch_loss_test = train(
                 svi, 
                 test_loader,
-                persuasiveness,
                 addl_data=addl_data, 
                 use_cuda=use_cuda,
                 eval_only=True
@@ -227,8 +211,6 @@ def train_test_loop_full_dataset(
     raw_test_data: tuple[np.array, ...],
     num_epochs: int,
     test_interval: int,
-    persuasiveness_shrink_rate: float,
-    initial_persuasiveness: float = 1.0,
     raw_addl_data: tuple[np.array, ...] = (),
     use_cuda: bool = False,
     show_progress: Union[bool, str] = True
@@ -252,12 +234,6 @@ def train_test_loop_full_dataset(
     test_interval : int
         Evaluate the loss against the testing data every so many training 
         steps.
-    persuasiveness_shrink_rate : float
-        This determines how fast the persuasiveness parameter shrinks.
-        This is used to gradually turn off semi-sipervised clustering.
-    initial_persuasiveness : float, optional
-        The initial persuasiveness parameter. Weight of the paired data 
-        likelihood contribution. The default is 1.0.
     raw_addl_data : tuple[np.array, ...], optional
         Additional data to feed to the model. The default is ().
     use_cuda : bool, optional
@@ -294,14 +270,9 @@ def train_test_loop_full_dataset(
     
     train_elbo = []
     test_elbo = []
-    
-    psr = torch.tensor(persuasiveness_shrink_rate, device=device)
-        
-    for epoch in (pbar := trange(num_epochs)):
-        # shrink persuasiveness
-        persuasiveness = initial_persuasiveness * (-epoch * psr).exp()
-        
-        total_epoch_loss_train = svi.step(*train_data, N, persuasiveness, *addl_data)
+            
+    for epoch in (pbar := trange(num_epochs)):    
+        total_epoch_loss_train = svi.step(*train_data, N, *addl_data)
         
         train_elbo.append((epoch, total_epoch_loss_train))
         if show_progress:
@@ -309,12 +280,12 @@ def train_test_loop_full_dataset(
 
         if epoch % test_interval == 0:
             # report test diagnostics
-            total_epoch_loss_test = svi.evaluate_loss(*test_data, N, persuasiveness, *addl_data)
+            total_epoch_loss_test = svi.evaluate_loss(*test_data, N, *addl_data)
 
             test_elbo.append((epoch, total_epoch_loss_test))
             if show_progress:
                 pbar.set_description(f"test loss: {total_epoch_loss_test:0.2f}")
-                        
+
     return train_elbo, test_elbo
 
 

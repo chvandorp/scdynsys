@@ -3,7 +3,6 @@ Fit VAE models to static and/or time-stamped Flow Cytometry data
 
 Use this script with slurm to run the models multiple times
 """
-import sys
 import csv
 import pickle
 import json
@@ -18,10 +17,9 @@ from pyro.infer import SVI, Trace_ELBO
 from pyro.optim import Adam
 from pyro.infer.autoguide.initialization import init_to_mean, init_to_value
 
-from .vae.gmm import VAEgmm
 from .vae.gmmdyn import VAEgmmdyn
 from .vae.dyn import DynamicModelDiff, DynamicModel
-from .vae.utils import setup_data_loaders, onehot_encoding, train_test_loop, train_test_loop_full_dataset
+from .vae.utils import onehot_encoding, train_test_loop_full_dataset
 
 # start timer
 
@@ -43,10 +41,6 @@ parser.add_argument(
 parser.add_argument(
     "--metadata_file", type=str, required=True,
     help="""name of the file containing meta-data per cell"""
-)
-parser.add_argument(
-    "--cluster_hint_file", type=str, default="",
-    help="""name of the file with how to assign clusters to indices"""
 )
 parser.add_argument(
     "--validation_index_file", type=str, default="",
@@ -104,14 +98,6 @@ parser.add_argument(
     "--distance_guided_diff", action="store_true", default=False,
     help="""use the distance-guided differentiation model"""
 )
-parser.add_argument(
-    "--static", action="store_true", default=False, 
-    help="""use the static model (time-information is ignored)"""
-)
-parser.add_argument(
-    "--minibatch", action="store_true", default=False,
-    help="""use minibatches to fit the model"""
-)
 
 args = parser.parse_args()
 
@@ -124,7 +110,6 @@ selected_markers_file_name = args.marker_file
 init_param_file_name = args.init_param_file
 validation_index_file_name = args.validation_index_file
 test_train_index_file_name = args.test_train_index_file
-cluster_hint_file_name = args.cluster_hint_file
 
 COUNTDATA_FIELD = args.countdata_field
 
@@ -141,15 +126,6 @@ NUM_EPOCHS = args.epochs
 TEST_FREQUENCY = 50
 NUM_SAMPLES = args.num_samples
 NUM_TEST_SAMPLES = 10000
-MINIBATCH_SIZE = 10000
-USE_MINIBATCH = args.minibatch
-
-if USE_MINIBATCH:
-    print(f"using mini-batches of size {MINIBATCH_SIZE} for fitting")
-else:
-    print("fitting to all data at once")
-
-DATALOADER_SEED = 144169 ## FIXME: use better method, but we do need consistent splits of train and test data
 
 NUM_CLUSTERS = args.num_clus
 HIDDEN_DIM = 20
@@ -160,8 +136,6 @@ T0 = args.init_time
 TIME_HOMOGENEOUS = args.time_homogeneous
 DIFFERENTIATION = args.differentiation
 DISTANCE_GUIDED_DIFF = args.distance_guided_diff
-STATIC = args.static
-
 
 print("number of populations:", NUM_CLUSTERS)
 
@@ -237,13 +211,13 @@ num_samples, feature_dim = raw_data.shape
 num_test = NUM_TEST_SAMPLES
 num_train = num_samples - num_test
 
-# these are only used if not using minibatches
 test_indices = np.random.choice(raw_data.shape[0], num_test, replace=False)
 train_indices = np.array([i for i in range(raw_data.shape[0]) if i not in test_indices], dtype=int)
 
 
+#########################################
 ############# parse metadata ############
-
+#########################################
 
 raw_batch = raw_metadata[:,metadata_varnames.index("batch")]
 unique_batch = sorted(list(set(raw_batch)))
@@ -279,32 +253,6 @@ num_sample_day = len(unique_sample_day)
 print("number of sample days:", num_sample_day)
 
 
-
-## cluster hints (for anchoring)
-
-if cluster_hint_file_name:
-    with open(cluster_hint_file_name, 'r') as f:
-        cluster_assignments = json.load(f)
-        # make sure keys are integers (json does not allow this)
-        cluster_assignments = {int(k) : v for k, v in cluster_assignments.items()}
-else:
-    cluster_assignments = {} # no cluster assignments
-    
-hints = np.zeros((raw_metadata.shape[0], len(cluster_assignments)), dtype=np.float32)
-assigned_clusters = sorted(list(cluster_assignments.keys()))
-for i, clus_index in enumerate(assigned_clusters):
-    pop_name = cluster_assignments[clus_index]
-    hint_vec = np.array(raw_metadata[:,metadata_varnames.index(pop_name)], dtype=np.float32)
-    ## map (0, 1) to (2,1) to encode ambivalence
-    hints[:,i] = 2 - hint_vec
-    
-    
-print("cluster hints:")
-for i, clus_index in enumerate(assigned_clusters):
-    pop_name = cluster_assignments[clus_index]
-    print(f"number of hints for {pop_name} (cluster {clus_index}): {sum(hints[:,i] == 1)}")
-
-
 ######## one-hot encoding of experimental batch #######
 
 batch_expt_onehot, batch_onehot, expt_onehot = onehot_encoding(
@@ -313,107 +261,9 @@ batch_expt_onehot, batch_onehot, expt_onehot = onehot_encoding(
 )
 
 print("batch encoding example:\n", batch_expt_onehot[0])
-
-
-##############################################
-############## Fit static model ##############
-##############################################
-
-if STATIC:
-    vae = VAEgmm(
-        data_dim=feature_dim, 
-        z_dim=LATENT_DIM, 
-        hidden_dim=HIDDEN_DIM, 
-        num_clus=NUM_CLUSTERS,
-        num_batch=batch_expt_onehot.shape[1],
-        anchored_clusters=assigned_clusters,
-        reg_scale=1.0,
-        fixed_scales=True,
-        use_cuda=USE_CUDA
-    )
-
-    with open(settings_filename, 'w') as f:
-        json.dump(vae.settings_dict(), f, sort_keys=True, indent=4)
-
-    # setup the optimizer
-    adam_args = {"lr": LEARNING_RATE}
-    optimizer = Adam(adam_args)
-
-    # setup the inference algorithm
-    loss_method = Trace_ELBO(num_particles=10, vectorize_particles=True)
-    svi = SVI(vae.model, vae.guide, optimizer, loss=loss_method)
-
-    ################# prepare test and train data ###############
-
-    raw_train_data = (
-        raw_data[train_indices],
-        batch_expt_onehot[train_indices],
-        hints[train_indices]
-    )
-
-    raw_test_data = (
-        raw_data[test_indices],
-        batch_expt_onehot[test_indices],
-        hints[test_indices]    
-    )
-
-    raw_data_combined = list(zip(raw_data, batch_expt_onehot, hints))        
-    ## random split of the dataset into test and train, then create data loaders
-    xtrain_loader, xtest_loader = setup_data_loaders(
-        raw_data_combined, 
-        num_train, 
-        num_test, 
-        batch_size=MINIBATCH_SIZE, 
-        seed=DATALOADER_SEED,
-        use_cuda=USE_CUDA
-    )
-    
-    ################# training loop ###################
-
-    if USE_MINIBATCH:        
-        train_elbo, test_elbo = train_test_loop(
-            svi,
-            xtrain_loader,
-            xtest_loader,
-            NUM_EPOCHS,
-            TEST_FREQUENCY,
-            persuasiveness_shrink_rate=PERS_SHRINK_RATE,
-            initial_persuasiveness=1.0,
-            use_cuda=USE_CUDA,
-            show_progress=False
-        )
-    else:
-        train_elbo, test_elbo = train_test_loop_full_dataset(
-            svi, 
-            raw_train_data, 
-            raw_test_data, 
-            NUM_EPOCHS, 
-            TEST_FREQUENCY,
-            persuasiveness_shrink_rate=PERS_SHRINK_RATE,
-            initial_persuasiveness=1.0,
-            use_cuda=USE_CUDA,
-            show_progress=False
-        )
-    ################## save results and diagnostics ##################
-    
-    loss_trace = {
-        "test" : test_elbo,
-        "train" : train_elbo
-    }
-
-    with open(loss_trace_filename, 'wb') as f:
-        pickle.dump(loss_trace, f)
-
-    store = pyro.get_param_store()
-    store.save(pyro_store_filename)
-
-    print("finished fitting static model")
-    sys.exit(0)
     
 
-#############################################################
-########### import addl data for dynamical model ############
-#############################################################
+########### import data for dynamical model ############
 
 
 with open(countdata_file_name, 'rb') as f:
@@ -471,6 +321,7 @@ with open(init_param_file_name, 'r') as f:
     init_param_dict = json.load(f)
 
 
+
 #############################################
 ############ fit dynamical model ############
 #############################################
@@ -479,31 +330,21 @@ with open(init_param_file_name, 'r') as f:
 # clear param store
 pyro.clear_param_store()
 
-raw_data_combined = list(zip(raw_data, xtime_index_raw, batch_expt_onehot, hints))
-xtrain_loader, xtest_loader = setup_data_loaders(
-    raw_data_combined, 
-    num_train,
-    num_test, 
-    batch_size=MINIBATCH_SIZE,
-    seed=DATALOADER_SEED,
-    use_cuda=USE_CUDA
-)
-
 raw_train_data = (
     raw_data[train_indices],
     xtime_index_raw[train_indices],
     batch_expt_onehot[train_indices],
-    hints[train_indices]
 )
 
 raw_test_data = (
     raw_data[test_indices],
     xtime_index_raw[test_indices],
     batch_expt_onehot[test_indices],
-    hints[test_indices]
 )
 
+
 ################ setup the VAE ###################
+
 
 # convert initial guesses to tensor
 init_param_dict = {k : torch.tensor(v) for k, v in init_param_dict.items()}
@@ -544,7 +385,6 @@ vae = VAEgmmdyn(
     num_batch=batch_expt_onehot.shape[1],
     dyn=dynmod,
     time_scale=0.01,
-    anchored_clusters=assigned_clusters,
     reg_scale_batch=1.0,
     reg_scale=10.0,
     reg_norm="l2",
@@ -567,36 +407,21 @@ svi = SVI(vae.model, vae.guide, optimizer, loss=loss_method)
 
 # training loop
 
-if USE_MINIBATCH:
-    addl_data = (ydata_tensor, ytime_index_tensor, utime_tensor)
-    train_elbo, test_elbo = train_test_loop(
-        svi,
-        xtrain_loader,
-        xtest_loader,
-        NUM_EPOCHS,
-        TEST_FREQUENCY,
-        persuasiveness_shrink_rate=PERS_SHRINK_RATE,
-        initial_persuasiveness=1.0,
-        addl_data=addl_data,
-        use_cuda=USE_CUDA,
-        show_progress=False
-    )
-else:
-    raw_addl_data = (ydata_raw, ytime_index_raw, utime_raw)
-    train_elbo, test_elbo = train_test_loop_full_dataset(
-        svi, 
-        raw_train_data, 
-        raw_test_data, 
-        NUM_EPOCHS, 
-        TEST_FREQUENCY,
-        persuasiveness_shrink_rate=PERS_SHRINK_RATE,
-        initial_persuasiveness=1.0,
-        raw_addl_data=raw_addl_data,
-        use_cuda=USE_CUDA,
-        show_progress=False
-    )
+raw_addl_data = (ydata_raw, ytime_index_raw, utime_raw)
+train_elbo, test_elbo = train_test_loop_full_dataset(
+    svi, 
+    raw_train_data, 
+    raw_test_data, 
+    NUM_EPOCHS, 
+    TEST_FREQUENCY,
+    raw_addl_data=raw_addl_data,
+    use_cuda=USE_CUDA,
+    show_progress=False
+)
 
-################ save result and diagnostics #################
+######################################################
+############ save result and diagnostics #############
+######################################################
 
 loss_trace = {
     "test" : test_elbo,
