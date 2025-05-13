@@ -12,9 +12,6 @@ order to make sure that the right datasets have been created.
 * `SequentialApproachClustering.ipynb`: In this notebook we do the initial analyses for the SA. 
   We parse the flow data, cluster with the Leiden algorithm, find consensus clusters,
   and create timeseries. **IN PROGRESS**
-* `SequentialApproachClustering.ipynb`: In this notebook we do the initial analyses for the SA. 
-  We parse the flow data, cluster with the Leiden algorithm, find consensus clusters,
-  and create timeseries. **IN PROGRESS**
 * `SequentialApproachFitting.ipynb`: In this notebook we do the downstream analyses for the SA. 
   We fit Stan models to the timeseries and we also do model comparison. **IN PROGRESS**
 * `FigureSAClustering.ipynb`: Here, we take the data processed in the SA clustering notebook

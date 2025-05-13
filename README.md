@@ -43,4 +43,4 @@ python3 -m pytest
 ## Using the package
 
 The `motebooks` folder contains code used for the aforementioned preprint.
-To run these, you first have to download the flow cytometry data from XXX *TODO: link to data repo*.
+To run these, you first have to download the flow cytometry data from Zonedo *TODO: link to data repo: create DOI*.
