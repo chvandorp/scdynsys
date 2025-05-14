@@ -375,8 +375,7 @@ model {
     }
     delta_loc ~ exponential(delta_loc_prior);
     
-    //logX0 ~ normal(0, 10);
-    logY0 ~ normal(0, 10); // TESTING
+    logY0 ~ normal(0, 10);
 
     // penalize an exponentially growing population
     target += -(growth_rate_penalty * fmax(rho_inf, 0.0))^2;
