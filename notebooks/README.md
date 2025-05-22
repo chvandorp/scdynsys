@@ -17,6 +17,8 @@ order to make sure that the right datasets have been created.
 * `FigureSAClustering.ipynb`: Here, we take the data processed in the SA clustering notebook
   and make a figue for the manuscript.
 * `IntegratedApproach.ipynb`: **IN PROGRESS**
+* `FigureIAClusAndFit.ipnb`: Create the figure that shows the clustering and model fit for the integrated approach.
+  This requires that we first run the `IntegratedApproach.ipynb` notebook.
 * `InfluxExperiment.ipynb`: **IN PROGRESS**
 * `BiphasicModels.ipynb`: Fit simple biphasic models to the cell count data alone. Create a figure for the SI.
 * `FigureSAClusteringCD4.ipynb` Clustering figure in the sequential approach for the CD4 data (SI figure) **IN PROGRESS**
