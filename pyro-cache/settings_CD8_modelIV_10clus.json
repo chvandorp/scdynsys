@@ -1,0 +1,19 @@
+{
+    "anchored_clusters": [],
+    "data_dim": 10,
+    "diff": true,
+    "fixed_scales": true,
+    "growth_rate_penalty": 10.0,
+    "hidden_dim": 20,
+    "hom": false,
+    "num_batch": 26,
+    "num_clus": 10,
+    "numeric_solver": true,
+    "penalize_growth": true,
+    "reg_norm": "l2",
+    "reg_scale": 10.0,
+    "reg_scale_batch": 1.0,
+    "static": false,
+    "time_scale": 0.01,
+    "z_dim": 6
+}
