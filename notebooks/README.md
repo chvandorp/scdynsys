@@ -33,4 +33,5 @@ order to make sure that the right datasets have been created.
   This requires that we first run the `IntegratedApproach.ipynb` notebook.
 * `FigureSAClusteringCD4.ipynb`: Clustering figure in the sequential approach for the CD4 data (SI figure) **IN PROGRESS**
 * `FigureSAFittingCD4.ipynb`: Model fitting figure in the sequential approach for the CD4 data (SI figure) **IN PROGRESS**
-* `FigureBatchCorrect.ipyng`: Make plot that shows the results of the batch-correction analysis for a simple SI figure.
+* `FigureBatchCorrect.ipynb`: Make plot that shows the results of the batch-correction analysis for a simple SI figure.
+* `FigureClusCompare.ipynb`: Compare the clusters assigned by both methods using a heatmap of the Jaccard index (SI figure).
