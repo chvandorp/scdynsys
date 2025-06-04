@@ -772,3 +772,100 @@ def heatmap_cluster_plot(ax, xs, cs, feat, clus, colors):
     
     for i, tick in enumerate(ax.get_yticklabels()):
         tick.set_color(colors[i])
+
+
+def plot_fits_sequential(
+        sam, stan_data, names_clus, count_scaling=1.0, 
+        cols=3, color='tab:blue', count_title=None
+    ):
+    """
+    Plot the results of a sequential model fit.
+    This function plots the fraction of cells in each cluster over time,
+    the total number of cells over time, and the predictions from the model.
+    The data is plotted as points, the model predictions as lines, and the
+    credible envelopes as shaded areas.
+
+    Parameters
+    ----------
+    sam : object
+        a fitted Stan model object containing the results of the fit.
+    stan_data : dict
+        a dictionary containing the data used for the fit.
+    names_clus : list[str]
+        a list of names for the clusters.
+    count_scaling : float, optional
+        a scaling factor for the total number of cells. Default is 1.0.
+    cols : int, optional
+        the number of columns in the plot. Default is 3.
+    color : str or list, optional
+        the color to use for the lines and shaded areas. If a string, it is used for all clusters.
+        If a list, it should contain a color for each cluster. Default is 'tab:blue'.
+    count_title : str, optional
+        the title of the first plot. If None, the title will be set to "Total number of cells".
+        If a string, it will be used as the title. Default is None.
+
+    Returns
+    -------
+    fig : matplotlib.figure.Figure
+        the figure object containing the plot.
+    axs : numpy.ndarray
+        an array of axes objects for each subplot.
+        The first axis contains the total number of cells, and the subsequent axes contain the fraction of cells in each cluster.
+    """
+    num_clus = stan_data['C']
+    nax = num_clus + 1
+    rows = nax // cols + (0 if nax % cols == 0 else 1)
+    fig, axs = plt.subplots(rows, cols, figsize=(10, 7), sharex=True)
+    
+    ts_all = np.array(stan_data["T"])
+    ts_clus = ts_all[np.array(stan_data["Idxf"])-1] ## 0/1 indexing correction 
+    xs_clus = stan_data["ClusFreq"]
+    ts_counts = ts_all[np.array(stan_data["Idxc"])-1] 
+    xs_counts = stan_data["TotalCounts"] * count_scaling
+    
+    freqs = sam.stan_variable("freqs")
+    freqs_sim = sam.stan_variable("freqs_sim")
+    
+    xs_clus_rel = xs_clus / np.sum(xs_clus, axis=0)
+    
+    ts_sim = stan_data["Tsim"]
+    
+    if not isinstance(color, list):
+        color = [color for _ in range(num_clus)]
+    
+    for i, name in enumerate(names_clus):
+        ax = axs.flatten()[i+1]
+        ## plot data
+        ax.scatter(ts_clus, xs_clus_rel[i], s=5, color='k')
+        ax.set_title(name)
+        ## plot prediction
+        lf, mf, hf = np.percentile(freqs[:,i,:], axis=0, q=[2.5, 50, 97.5])
+        ax.plot(ts_sim, mf, color=color[i])
+        ax.fill_between(ts_sim, lf, hf, alpha=0.5, linewidth=0, color=color[i])
+        ax.set_yscale('log')
+        ax.set_ylabel("fraction of cells")
+        ## plot simulations
+        for j, t in enumerate(ts_clus):
+            l, u = np.percentile(freqs_sim[:,i,j], q=[2.5, 97.5])
+            ax.plot([t,t], [l, u], color=color[i], linewidth=3, alpha=0.2)   
+
+    ## total number of cells
+    ax = axs.flatten()[0]
+    counts = sam.stan_variable("counts") * count_scaling
+    counts_sim = sam.stan_variable("counts_sim") * count_scaling
+        
+    ## plot prediction
+    lc, mc, hc = np.percentile(counts, axis=0, q=[2.5, 50, 97.5])
+    ax.plot(ts_sim, mc, color='blue')
+    ax.fill_between(ts_sim, lc, hc, alpha=0.3, color='blue', linewidth=0)
+    ## plot data
+    ax.scatter(ts_counts, xs_counts, s=5, color='k')
+    ## plot simulations
+    lo, hi = np.percentile(counts_sim, q=[2.5, 97.5], axis=0)
+    ax.fill_between(ts_sim, lo, hi, color='blue', alpha=0.2, linewidth=0)
+
+    ax.set_yscale('log')
+    ax.set_title(count_title if count_title is not None else "Total number of cells")
+    ax.set_ylabel("number of cells")
+    
+    return fig, axs

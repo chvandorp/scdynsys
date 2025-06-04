@@ -44,3 +44,12 @@ python3 -m pytest
 
 The `motebooks` folder contains code used for the aforementioned preprint.
 To run these, you first have to download the flow cytometry data from Zonedo *TODO: link to data repo: create DOI*.
+
+
+## TODO
+
+Some improvments:
+
+* Replace python `pickle`s in the data folder with human-readable `json` files. 
+* Refactor the notebooks to avoid code repetition between the CD8 and CD8 analysis.
+* Script to automatically download the data from Zonedo.
