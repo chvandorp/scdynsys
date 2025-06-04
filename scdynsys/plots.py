@@ -693,3 +693,82 @@ def remove_axes_keep_labels(ax: matplotlib.axes.Axes) -> None:
     ax.set_xticks([])
     ax.set_yticks([])
 
+
+
+def umap_cluster_plot(ax, zs, cs, clus, colors):
+    """
+    Make a UMAP plot that shows the identified clusters.
+    This function is used to visualize the result of Leiden clustering.
+    And can be used to further annotate clusters, or find 
+    consensus clusters.
+
+    Parameters
+    ----------
+    ax : matplotlib.axes.Axes
+        the axes on which to plot the UMAP.
+    zs : np.ndarray
+        the UMAP coordinates of the cells.
+    cs : np.ndarray
+        the cluster labels of the cells.
+    clus : list[int]
+        a lsit of cluster labels (in a specific order).
+        these names are used to label the clusters in the plot.
+    colors : list[str]
+        a list of colors to use for the clusters.
+
+    Returns
+    -------
+    None
+    """
+    means = util.get_mean_per_cluster(zs, cs, label_order=clus)    
+    for i, cl in enumerate(clus):
+        sel = cs == cl
+        cc = colors[i]
+        ax.scatter(*zs[sel].T, s=1, linewidths=0, color=cc, alpha=0.3, rasterized=True)
+        xi, yi = means[i]
+        ax.text(xi, yi, cl, va='center', ha='center', bbox = dict(boxstyle="circle", color=cc))
+    
+    # remove x and y ticks and set labels
+    [f([]) for f in [ax.set_xticks, ax.set_yticks]]
+    [f(f"UMAP {i+1}") for i, f in enumerate([ax.set_xlabel, ax.set_ylabel])]
+        
+
+
+
+def heatmap_cluster_plot(ax, xs, cs, feat, clus, colors):
+    """
+    Make a heatmap of the mean feature values per cluster.
+    This function can be used to annotate clusters based on
+    marker expression.
+
+    Parameters
+    ----------
+
+    ax : matplotlib.axes.Axes
+        the axes on which to plot the heatmap.
+    xs : np.ndarray
+        the feature values of the cells.
+    cs : np.ndarray
+        the cluster labels of the cells.
+    feat : list[str]
+        a list of feature names (in a specific order).
+        these names are used a ticks lables for the features in the heatmap.
+    clus : list[int]
+        a list of cluster labels (in a specific order).
+        these names are used as ticklabels for the clusters in the heatmap.
+    colors : list[str]
+        a list of colors to use for the clusters.
+        The colors are used to color the y-ticks of the heatmap.
+
+    Returns
+    -------
+    None
+    """
+    MFI = util.get_mean_per_cluster(
+        xs, cs, label_order=clus
+    )
+    MFI = sts.zscore(MFI, axis=0)
+    simple_heatmap(ax, MFI, feat, clus)
+    
+    for i, tick in enumerate(ax.get_yticklabels()):
+        tick.set_color(colors[i])

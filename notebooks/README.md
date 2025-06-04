@@ -17,7 +17,9 @@ order to make sure that the right datasets have been created.
   inspect the fit. Create posterior predictive checks. Save data for downstream plotting notebooks.
 * `InfluxExperiment.ipynb`: **IN PROGRESS**
 * `BiphasicModels.ipynb`: Fit simple biphasic models to the cell count data alone. Create a figure for the SI.
-* `SequentialApproachCD4.ipynb`: Combined clustering and model fitting notebook for the SA with the CD4 data. **IN PROGRESS**
+* `SequentialApproachClusCD4.ipynb`: Clustering notebook for the SA with the CD4 data.
+* `SequentialApproachFitCD4.ipynb`: Fitting notebook for the SA with the CD4 data. **IN PROGRESS**
+* `IntegratedApproachCD4.ipynb`: Fit the VAE model to CD4 sc-flow and cell count timeseries. **IN PROGRESS**
 
 
 ### Figures
