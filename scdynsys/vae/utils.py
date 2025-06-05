@@ -8,6 +8,7 @@ from pyro.optim.optim import PyroOptim
 import numpy as np
 import tqdm
 import tqdm.notebook
+from collections import Counter
 
 def setup_data_loaders(
     raw_data: Any,
@@ -387,3 +388,31 @@ def permute_matrix(A: torch.Tensor, perm: list[int]) -> torch.Tensor:
     return ppA
     
 
+def compute_ppd_freqs(vae, t, n, s, N, alpha=0.05, max_sam_size=10000, re_classify=False):
+    bootstrap = n*N > max_sam_size
+    sam_size = min(max_sam_size, n*N)
+    utime = torch.tensor([t], device=vae.device, dtype=torch.float32)
+    xtime = torch.tensor([0], device=vae.device, dtype=torch.long)
+    s_tensor = torch.tensor(s, device=vae.device, dtype=torch.float32)
+    with torch.no_grad():
+        zz, xx, clus_vec = vae.posterior_sample(utime[xtime], s_tensor, sam_size)
+        clus_vec = clus_vec.squeeze()
+        if re_classify:
+            clus_vec = vae.classifier(
+                xx.squeeze(),
+                xtime,
+                utime,
+                s_tensor.expand(sam_size, -1),
+                'sample'
+            )
+    clus_vec_raw = clus_vec.cpu().numpy()
+    freqs = np.zeros((N, vae.num_clus))
+    for i in range(N):
+        if bootstrap:
+            idxs = np.random.choice(sam_size, n)
+        else:
+            idxs = list(range(i*n, (i+1)*n))
+        hist = Counter(clus_vec_raw[idxs])
+        freqs[i,:] = [hist.get(j, 0)/n for j in range(vae.num_clus)]
+    q = [100*alpha/2, 100*(1-alpha/2)]
+    return np.percentile(freqs, axis=0, q=q)
