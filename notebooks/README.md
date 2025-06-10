@@ -36,7 +36,9 @@ order to make sure that the right datasets have been created.
   This requires that we first run the `IntegratedApproach.ipynb` notebook.
 * `FigureSAClusteringCD4.ipynb`: Clustering figure in the sequential approach for the CD4 data (SI figure)
 * `FigureSAFittingCD4.ipynb`: Model fitting figure in the sequential approach for the CD4 data (SI figure)
-* `FigureIAClusFitVali.ipynb`: Create IA figure for the CD4 lineage. Combines fitting, clustering and validation.
+* `FigureIAClusFitValiCD4.ipynb`: Create IA figure for the CD4 lineage. Combines fitting, clustering and validation.
+  This requires that we first run the `IntegratedApproachCD4.ipynb` notebook.
+* `FigureIAValiCD4.ipynb`: Create additional validation figure for the IA and the CD4 lineage.
   This requires that we first run the `IntegratedApproachCD4.ipynb` notebook.
 * `FigureBatchCorrect.ipynb`: Make plot that shows the results of the batch-correction analysis for a simple SI figure.
 * `FigureClusCompare.ipynb`: Compare the clusters assigned by both methods using a heatmap of the Jaccard index (SI figure).
