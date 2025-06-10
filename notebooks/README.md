@@ -25,6 +25,7 @@ order to make sure that the right datasets have been created.
 
 * `FigureDataOverview.ipynb`: Create the first figure of the manuscript that shows
   an overview of the data (cell counts, flow data, experimental setup).
+  Also create SI figures for quality control, and anaylis of tetramer+ T cells.
 * `FigureSAClustering.ipynb`: Here, we take the data processed in the SA clustering notebook
   and make a figue for the manuscript.
 * `FigureSAFitting.ipynb`: Here, we take the data processed in the SA fitting notebook
