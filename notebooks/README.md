@@ -19,6 +19,8 @@ order to make sure that the right datasets have been created.
 * `SequentialApproachClusCD4.ipynb`: Clustering notebook for the SA with the CD4 data.
 * `SequentialApproachFitCD4.ipynb`: Fitting notebook for the SA with the CD4 data.
 * `IntegratedApproachCD4.ipynb`: Fit the VAE model to CD4 sc-flow and cell count timeseries.
+* `InfluxExperiment.ipynb`: Analyze data from a transfer experiment with congenic mice, 
+  create an SI figure showing the results and a experimental diagram.
 
 
 ### Figures
