@@ -47,3 +47,6 @@ order to make sure that the right datasets have been created.
   This requires that we first run the `IntegratedApproachCD4.ipynb` notebook.
 * `FigureBatchCorrect.ipynb`: Make plot that shows the results of the batch-correction analysis for a simple SI figure.
 * `FigureClusCompare.ipynb`: Compare the clusters assigned by both methods using a heatmap of the Jaccard index (SI figure).
+* `FigureIdentifiability.ipynb`: SI figures showing the results of the sensitivity and identifiability analyses.
+  Both for CD8 and CD4 data. Requires running the `SensitivityAnalysis.ipynb`, `IdentifiabilityAnalysis.ipynb` and 
+  `ModelIdentifiability.ipynb` notebooks.
