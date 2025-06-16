@@ -23,6 +23,10 @@ order to make sure that the right datasets have been created.
   create an SI figure showing the results and a experimental diagram.
 * `SensitivityAnalysis.ipynb`: Notebook for calculating sensitivity of the model w.r.t. the parameters,
   including the differentiation matrix elements $Q_{ij}$. 
+* `ModelIdentifiability.ipynb`: Simulate data with the different models and fit all models to the 
+  simulated datasets. Then do model comparison to see how well we can identify the *model* with a given dataset.
+* `IdentifiabilityAnalysis.ipynb`: Practical identifiability analysis for the differentiation rates.
+  Uses estimates for the SA.
 
 
 ### Figures
