@@ -1,4 +1,5 @@
 import numpy as np
+from typing import Literal
 
 from . import simulate as simul
 
@@ -82,11 +83,14 @@ def get_point_est(par_dict, diag_dict, method="MAP"):
 
 ## Method for generating pseudo-data usign a point estimate
 
-def generate_pseudo_data(model, pd_gt, t0, tobs, flow_sample_sizes, count_scaling, method="ODE", n_sim=200):
+SolverMethod = Literal["ODE", "magnus1", "magnus2"]
+
+def generate_pseudo_data(model, pd_gt, t0, tobs, flow_sample_sizes, count_scaling, 
+                         method: SolverMethod="ODE", n_sim: int=200):
     ts = np.linspace(t0, tobs[-1], n_sim)
     method_dispatch = {
         "ODE" : simul.solve_trm_ivp,
-        "naive" : simul.solve_trm_ivp_naive_sol,
+        "magnus1" : simul.solve_trm_ivp_magnus1_approx,
         "magnus2" : simul.solve_trm_ivp_magnus2_approx,
     }
 
