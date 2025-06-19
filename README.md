@@ -40,7 +40,7 @@ python3 -m pytest
 ## Downloading the data files
 
 Large data files are hosted on Zenodo. 
-To run the notebooks (see below), you first have to download the flow cytometry data from Zenodo *TODO: link to data repo: create DOI*.
+To run the notebooks (see below), you first have to download the [flow cytometry data from Zenodo]((https://doi.org/10.5281/zenodo.15353158)).
 Downloading the files can be done with the `fetch_data` command (provided by the `scdynsys` package):
 
 ```bash

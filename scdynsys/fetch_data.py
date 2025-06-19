@@ -7,7 +7,8 @@ def main():
     Download files from a Zenodo record.
     Replace `record_id` with the ID of the Zenodo record you want to download.
     """
-    record_id = "14201749"  # FIXME: Replace with correct Zenodo record ID
+    record_id = "15353158"
+    target_dir = "data"
 
     url = f"https://zenodo.org/api/records/{record_id}"
     r = requests.get(url)
@@ -20,7 +21,6 @@ def main():
 
     print("Downloading files ...")
 
-    target_dir = "zenodo_data" ## FIXME: this should be just "data"    
     if not os.path.exists(target_dir):
         os.makedirs(target_dir)
 
