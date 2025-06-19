@@ -4,6 +4,11 @@ These are Jupyter notebooks used to do the analyses and make figures for the man
 The notebooks make use of the `scdynsys` package. The notebooks have to be executed in the right 
 order to make sure that the right datasets have been created.
 
+To get started with the CD8 data set, open the notebook `SequentialApproachClustering.ipynb` (for Leiden clustering),
+and from there, either continue with `SequentialApproachFitting.ipynb` (for Stan model fitting), 
+or with `IntegratedApproach.ipynb` (for VAE modeling).
+Similar notebooks exist specific for the CD4 data.
+
 ## Description of the notebooks
 
 ### Analysis

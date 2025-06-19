@@ -61,4 +61,4 @@ they have to be executed.
 Some improvements:
 
 * Replace python `pickle`s in the data folder with human-readable `json` files. 
-* Refactor the notebooks to avoid code repetition between the CD8 and CD8 analysis.
+* Refactor the notebooks to avoid code repetition between the CD8 and CD4 analysis.
