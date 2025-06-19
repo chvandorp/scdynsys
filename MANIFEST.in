@@ -1,2 +1,4 @@
 include scdynsys/stan_models/linear_inhom_DA_model.stan
+include scdynsys/stan_models/cellcounts-conly.stan
+include scdynsys/stan_models/linreg.stan
 include scdynsys/stan_models/include/functions.stan

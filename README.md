@@ -40,11 +40,22 @@ pip install pytest
 python3 -m pytest
 ```
 
+## Downloading the data files
+
+Large data files are hosted on Zenodo. 
+To run the notebooks (see below), you first have to download the flow cytometry data from Zenodo *TODO: link to data repo: create DOI*.
+Downloading the files can be done with the `fetch_data` command (provided by the `scdynsys` package):
+
+```bash
+fetch_data
+```
+
+The files are download to the `data` folder.
+
 ## Using the package
 
 The `notebooks` folder contains code used for the aforementioned preprint.
-To run the notebooks, you first have to download the flow cytometry data from Zonedo *TODO: link to data repo: create DOI*.
-The `notebooks` folder contains an overview (README) file describing what all notebooks are used for and the order in which
+this folder also constans an overview (README) file describing what all notebooks are used for and the order in which
 they have to be executed.
 
 
@@ -54,4 +65,4 @@ Some improvements:
 
 * Replace python `pickle`s in the data folder with human-readable `json` files. 
 * Refactor the notebooks to avoid code repetition between the CD8 and CD8 analysis.
-* Script to automatically download the data from Zonedo.
+* Script to automatically download the data from Zenodo.

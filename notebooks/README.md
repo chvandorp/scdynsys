@@ -35,7 +35,8 @@ order to make sure that the right datasets have been created.
   an overview of the data (cell counts, flow data, experimental setup).
   Also create SI figures for quality control, and anaylis of tetramer+ T cells.
 * `FigureSAClustering.ipynb`: Here, we take the data processed in the SA clustering notebook
-  and make a figue for the manuscript.
+  and make a figure for the manuscript. Also creates a second version of the figure 
+  that shows the fit of model IV to the data.
 * `FigureSAFitting.ipynb`: Here, we take the data processed in the SA fitting notebook
   and make an SI figue for the manuscript showing fits to the 4 models.
 * `FigureVAEDiagram.ipynb`: Make a diagram that explains how the IA model works.

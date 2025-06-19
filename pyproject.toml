@@ -45,3 +45,6 @@ dependencies = [
 [tool.setuptools]
 include-package-data = true
 packages = ["scdynsys", "scdynsys.vae"]
+
+[project.scripts]
+fetch_data = "scdynsys.fetch_data:main"
