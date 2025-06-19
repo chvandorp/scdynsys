@@ -8,9 +8,6 @@ can be found on BioRxiv:
 > A Variational deep-learning approach to modeling memory T cell dynamics 
 > [preprint](https://www.biorxiv.org/content/10.1101/2024.07.08.602409v1) (2024)
 
-> [!NOTE]
-> This repository is under construction and will be regularly updated.
-
 
 ## Installation and testing
 
@@ -65,4 +62,3 @@ Some improvements:
 
 * Replace python `pickle`s in the data folder with human-readable `json` files. 
 * Refactor the notebooks to avoid code repetition between the CD8 and CD8 analysis.
-* Script to automatically download the data from Zenodo.

@@ -48,3 +48,5 @@ packages = ["scdynsys", "scdynsys.vae"]
 
 [project.scripts]
 fetch_data = "scdynsys.fetch_data:main"
+fit_vae = "dynscsvi.fit_vae:main"
+fit_stan_models = "dynscsvi.fit_stan_models:main"
